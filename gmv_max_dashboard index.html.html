@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>GMV Max Performance — Levi's Malaysia</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2440;
+    --denim:#33507E;
+    --denim-dark:#243863;
+    --denim-light:#7C93BE;
+    --paper:#F3F4F7;
+    --card:#FFFFFF;
+    --line:#E2E4EC;
+    --tab-red:#B8431F;
+    --sage:#5E8368;
+    --amber:#C9922E;
+    --muted:#6B7086;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1320px; margin:0 auto; padding:0 28px 64px;}
+  header.top{
+    background:linear-gradient(135deg,var(--denim-dark),var(--denim));
+    color:#fff; padding:36px 0 30px;
+  }
+  header.top .wrap{padding-top:0; padding-bottom:0;}
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:11.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:#C9D3E8; margin:0 0 8px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:32px;
+    margin:0 0 6px; letter-spacing:-.01em;
+  }
+  .sub{color:#DCE3F2; font-size:14.5px; margin:0; max-width:720px; line-height:1.5;}
+  .stitch{
+    height:0; border-top:2px dashed rgba(233,122,72,.55); margin:26px 0 30px;
+    position:relative;
+  }
+  .stitch::before, .stitch::after{
+    content:''; position:absolute; top:-4px; width:8px; height:8px; border-radius:50%;
+    background:var(--tab-red);
+  }
+  .stitch::before{left:0;} .stitch::after{right:0;}
+
+  .scope-banner{
+    background:#FFF8ED; border:1px solid #EAD9B4; border-left:4px solid var(--amber);
+    border-radius:6px; padding:16px 20px; font-size:13.5px; line-height:1.6; color:#5B4A24; margin-top:-14px; margin-bottom:34px;
+  }
+  .scope-banner b{color:#3E3013;}
+
+  .kpi-grid{
+    display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:38px;
+  }
+  @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+  .kpi{
+    background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 16px 14px;
+  }
+  .kpi .label{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-bottom:8px; font-weight:600;}
+  .kpi .value{font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:21px; color:var(--ink); line-height:1.1;}
+  .kpi .delta{font-size:12px; margin-top:8px; font-weight:600; display:inline-flex; align-items:center; gap:4px;}
+  .delta.up{color:var(--sage);} .delta.down{color:var(--tab-red);}
+  .kpi .delta-note{color:var(--muted); font-weight:400; margin-left:2px;}
+
+  .section-head{display:flex; align-items:baseline; justify-content:space-between; margin:0 0 14px;}
+  .section-title{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:16px; margin:0;}
+  .section-note{font-size:12px; color:var(--muted); margin:0;}
+
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:36px;}
+  .grid4{display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:36px;}
+  @media(max-width:1000px){.grid2{grid-template-columns:1fr;} .grid4{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:640px){.grid4{grid-template-columns:1fr;}}
+
+  .card{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px 12px;}
+  .card h3{font-family:'Space Grotesk',sans-serif; font-size:13.5px; font-weight:600; margin:0 0 2px;}
+  .card .hint{font-size:11.5px; color:var(--muted); margin:0 0 10px;}
+  .chart-box{position:relative; height:230px;}
+  .chart-box.tall{height:320px;}
+
+  table.rank{width:100%; border-collapse:collapse; font-size:12.5px;}
+  table.rank th{text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--line);}
+  table.rank td{padding:7px 8px; border-bottom:1px solid #F0F0F4; font-family:'IBM Plex Mono',monospace; font-size:12px;}
+  table.rank td.name{font-family:'Inter',sans-serif; font-size:12.5px;}
+
+  /* heatmap */
+  .heat-wrap{overflow-x:auto;}
+  table.heat{width:100%; border-collapse:separate; border-spacing:4px; font-size:12px;}
+  table.heat th{font-size:10.5px; text-transform:uppercase; color:var(--muted); font-weight:600; padding-bottom:4px;}
+  table.heat td{text-align:center; padding:12px 6px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-weight:600; color:#1B2440;}
+  table.heat td.metric-label{text-align:left; font-family:'Inter',sans-serif; font-weight:600; color:var(--ink); font-size:11.5px; background:none !important;}
+
+  .insights{margin-top:10px;}
+  .insight-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:14px;}
+  @media(max-width:900px){.insight-grid{grid-template-columns:1fr;}}
+  .insight-card{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--denim); border-radius:8px; padding:14px 16px;}
+  .insight-card.win{border-left-color:var(--sage);}
+  .insight-card.watch{border-left-color:var(--tab-red);}
+  .insight-card h4{margin:0 0 6px; font-size:13.5px; font-family:'Space Grotesk',sans-serif;}
+  .insight-card p{margin:0; font-size:12.8px; line-height:1.55; color:#33384C;}
+  .insight-card p b{color:var(--ink);}
+
+  .rec-list{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0 30px;}
+  @media(max-width:900px){.rec-list{grid-template-columns:1fr;}}
+  .rec{background:var(--denim-dark); color:#fff; border-radius:8px; padding:16px;}
+  .rec .num{font-family:'IBM Plex Mono',monospace; font-size:11px; color:#9FB3DD; margin-bottom:6px;}
+  .rec h4{margin:0 0 6px; font-size:13.5px; font-family:'Space Grotesk',sans-serif;}
+  .rec p{margin:0; font-size:12.5px; line-height:1.5; color:#DCE3F2;}
+
+  .gap-box{background:#F1F0EC; border:1px solid #DEDAD0; border-radius:8px; padding:16px 18px; font-size:12.8px; line-height:1.7; color:#454130;}
+  .gap-box ul{margin:6px 0 0; padding-left:18px;}
+
+  footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--line); font-size:11.5px; color:var(--muted); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <p class="eyebrow">GMV Max &middot; TikTok Shop Ads &middot; Levi's Malaysia</p>
+    <h1>GMV Max Performance Dashboard</h1>
+    <p class="sub">Jun 3 – Jul 2, 2026 (last 30 days, no range specified) · All figures in Malaysian Ringgit (RM/MYR) · Pulled live from TikTok's GMV Max Reporting API</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="stitch" style="margin-top:26px;"></div>
+
+  <div class="scope-banner">
+    <b>Scope note:</b> GMV Max is reported through a dedicated TikTok endpoint that only exposes <b>spend, net cost, gross revenue, ROI, orders and cost-per-order</b> — there is no impressions, clicks, CTR, CPC, CPM, or reach data at this level, and no manual ad-group/ad structure (GMV Max auto-generates and rotates creative). Every number below is pulled directly from that API for advertiser <b>7561335870155030544</b> (store: Levi's Malaysia, MY). Full caveats at the bottom.
+  </div>
+
+  <!-- KPI SCORECARD -->
+  <div class="section-head">
+    <p class="section-title">Top-line KPIs</p>
+    <p class="section-note">Δ = last 7 days (Jun 26–Jul 2) vs prior 7 days (Jun 19–Jun 25)</p>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="label">Spend</div><div class="value">RM 27,740.95</div><div class="delta down">▼ 13.3% <span class="delta-note">WoW</span></div></div>
+    <div class="kpi"><div class="label">Net Cost</div><div class="value">RM 24,760.47</div><div class="delta down">▼ 13.6% <span class="delta-note">WoW</span></div></div>
+    <div class="kpi"><div class="label">Gross Revenue</div><div class="value">RM 507,065.75</div><div class="delta down">▼ 4.7% <span class="delta-note">WoW</span></div></div>
+    <div class="kpi"><div class="label">Orders</div><div class="value">2,953</div><div class="delta down">▼ 20.5% <span class="delta-note">WoW</span></div></div>
+    <div class="kpi"><div class="label">Blended ROI</div><div class="value">18.28x</div><div class="delta up">▲ 9.8% <span class="delta-note">WoW</span></div></div>
+    <div class="kpi"><div class="label">Cost / Order</div><div class="value">RM 9.39</div><div class="delta down">▲ 9.1% <span class="delta-note">WoW, higher = worse</span></div></div>
+  </div>
+
+  <!-- TRENDS -->
+  <div class="section-head">
+    <p class="section-title">Daily trends</p>
+    <p class="section-note">30-day daily series, summed across all 10 active GMV Max campaigns</p>
+  </div>
+  <div class="grid4">
+    <div class="card">
+      <h3>Spend vs Gross Revenue</h3>
+      <p class="hint">Daily, dual axis</p>
+      <div class="chart-box"><canvas id="chSpendRev"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>ROI trend</h3>
+      <p class="hint">Dashed line = 30-day average (18.3x)</p>
+      <div class="chart-box"><canvas id="chROI"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Orders volume</h3>
+      <p class="hint">Daily order count (GMV Max's conversion event)</p>
+      <div class="chart-box"><canvas id="chOrders"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Cost per order</h3>
+      <p class="hint">Lower is more efficient</p>
+      <div class="chart-box"><canvas id="chCPO"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CUMULATIVE + MIX -->
+  <div class="grid2">
+    <div class="card">
+      <h3>Cumulative spend vs cumulative revenue</h3>
+      <p class="hint">Running total across the 30-day window — closest available substitute for an impressions→clicks funnel, which GMV Max's API does not expose</p>
+      <div class="chart-box tall"><canvas id="chCumulative"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Budget allocation by campaign</h3>
+      <p class="hint">Share of total spend, 10 active campaigns</p>
+      <div class="chart-box tall"><canvas id="chDonut"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CAMPAIGNS -->
+  <div class="section-head">
+    <p class="section-title">Campaign performance</p>
+    <p class="section-note">10 active GMV Max campaigns (6 disabled, zero-spend campaigns excluded — see caveats)</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Revenue by campaign</h3>
+      <p class="hint">Hover for spend, ROI and orders</p>
+      <div class="chart-box tall"><canvas id="chCampaignRev"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Budget vs ROI efficiency</h3>
+      <p class="hint">Bubble size = order volume · x = spend (RM) · y = ROI (x)</p>
+      <div class="chart-box tall"><canvas id="chScatter"></canvas></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Cost vs net cost by campaign</h3>
+      <p class="hint">Gap = TikTok's ROI-protection compensation credited back (all active campaigns are enrolled)</p>
+      <div class="chart-box tall"><canvas id="chNetCost"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Orders vs cost-per-order by campaign</h3>
+      <p class="hint">Bars = orders (left) · line = cost/order (right)</p>
+      <div class="chart-box tall"><canvas id="chOrdersCPO"></canvas></div>
+    </div>
+  </div>
+
+  <!-- PRODUCTS + TIMING -->
+  <div class="section-head">
+    <p class="section-title">Products &amp; timing</p>
+    <p class="section-note">GMV Max has no manual ad-group/ad level — product (SKU group) is the closest equivalent, requested here in place of "ad creative" breakdown</p>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3>Top 10 products by revenue</h3>
+      <p class="hint">Across all active campaigns, real TikTok Shop product catalog</p>
+      <div class="chart-box tall"><canvas id="chProducts"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Day-of-week performance</h3>
+      <p class="hint">Averaged across the 30-day window (4–5 occurrences per weekday)</p>
+      <div class="heat-wrap" id="heatmapHost"></div>
+    </div>
+  </div>
+
+  <div class="stitch"></div>
+
+  <!-- INSIGHTS -->
+  <div class="insights">
+    <div class="section-head"><p class="section-title">Insights &amp; Recommendations</p></div>
+
+    <div class="insight-grid">
+      <div class="insight-card watch">
+        <h4>Order volume is the real headline, not ROI</h4>
+        <p>Orders fell <b>20.5% week-over-week</b> while spend fell only 13.3% — ROI looks like it improved (+9.8%) but that's arithmetic, not health. Fewer, pricier conversions are pushing the ratio up while overall demand cools.</p>
+      </div>
+      <div class="insight-card win">
+        <h4>LIVE GMV Max is the single biggest lever</h4>
+        <p><b>LIVE GMV Max_Levi's Malaysia</b> alone is 36% of spend and 38% of revenue (RM193,621 at 19.2x ROI) — livestream-driven GMV Max is outperforming every static product campaign at scale.</p>
+      </div>
+      <div class="insight-card">
+        <h4>Spend is heavily concentrated</h4>
+        <p>The top 2 campaigns absorb <b>65% of all spend</b>; top 3 absorb 76%. The remaining 7 active campaigns share the rest, and 6 more campaigns sit disabled at RM0 — worth a cleanup pass.</p>
+      </div>
+      <div class="insight-card watch">
+        <h4>Saturday spend spikes, but efficiency drops</h4>
+        <p>Saturday averages <b>RM1,554/day</b> spend — 80%+ above other weekdays — yet posts the <b>lowest ROI of the week (14.9x)</b>. This is driven largely by a single anomaly: a RM2,258 spend spike on Jun 6 (a "6.6" mega-sale day) that pulled Saturday's average down.</p>
+      </div>
+      <div class="insight-card win">
+        <h4>Several underspent products are highly efficient</h4>
+        <p>318 Shaping Wide-Leg 0001 (50.6x ROI), 0014 (49.0x), and the Women's Trucker Jacket (47.1x) are all running on under RM300 of spend each — real headroom to scale before efficiency likely decays.</p>
+      </div>
+      <div class="insight-card">
+        <h4>512 Slim Taper Jeans lags the top-10 product set</h4>
+        <p>At 10.1x ROI on RM1,013 spend, it's the weakest ROI among the top 10 products by revenue — worth a creative or targeting review relative to its RM319 price point peers.</p>
+      </div>
+    </div>
+
+    <div class="rec-list">
+      <div class="rec">
+        <div class="num">01 / REALLOCATE</div>
+        <h4>Shift incremental budget to underspent, high-ROI products</h4>
+        <p>318 Wide-Leg 0001/0014, the Trucker Jacket, and 315 Bootcut are all &gt;39x ROI on &lt;RM300 spend. Test doubling their budget before assuming diminishing returns.</p>
+      </div>
+      <div class="rec">
+        <div class="num">02 / INVESTIGATE</div>
+        <h4>Diagnose the order-volume decline before celebrating the ROI gain</h4>
+        <p>Confirm whether the 20.5% WoW order drop is post-6.6-sale hangover, seasonal, or creative fatigue on LIVE GMV Max and All Mens (1) — the two campaigns carrying 65% of spend.</p>
+      </div>
+      <div class="rec">
+        <div class="num">03 / CLEAN UP</div>
+        <h4>Smooth mega-sale spend spikes and retire dead campaigns</h4>
+        <p>Cap single-day spend surges like Jun 6 to avoid the efficiency dip seen on high-spend Saturdays, and archive the 6 disabled, zero-spend campaigns cluttering reporting.</p>
+      </div>
+    </div>
+
+    <div class="gap-box">
+      <b>Data gaps &amp; caveats — read before presenting</b>
+      <ul>
+        <li><b>No impressions, clicks, CTR, CPC, CPM, or reach exist for GMV Max</b> at any level. This is a platform limitation of TikTok's GMV Max Reporting API (an automated, catalog-driven product), not a partial pull — confirmed by direct API testing, not assumed.</li>
+        <li><b>No ad-group/ad-level structure.</b> GMV Max has no manual ad groups or ads; product (SKU-group) and creative/video IDs are the closest analogs. The "ad creative" ranking requested was built from product-level data instead.</li>
+        <li><b>Day-of-week, not hour-of-day.</b> Hourly breakdowns require one API call per single day (30 calls for this window); day-of-week uses the full 30-day pull already retrieved and is fully real.</li>
+        <li><b>Cost vs. net cost.</b> All active campaigns are enrolled in TikTok's ROI-protection compensation program, so <i>net cost</i> runs ~11% below gross <i>cost</i>. This dashboard uses gross cost for ROI/CPO throughout for consistency; net cost is shown separately for transparency.</li>
+        <li><b>Scope.</b> This account also runs one unrelated, zero-spend "Community interaction" auction campaign outside GMV Max, excluded here as out of scope.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    <span>Source: TikTok GMV Max Reporting API · Advertiser 7561335870155030544 · Store: Levi's Malaysia (MY)</span>
+    <span>Pulled Jul 3, 2026</span>
+  </footer>
+</div>
+
+<script>
+const daily = [{"date_str":"2026-06-03","cost":1035.36,"net_cost":1035.36,"gross_revenue":16962.39,"orders":131,"roi":16.38,"cost_per_order":7.9,"dow":"Wednesday"},{"date_str":"2026-06-04","cost":1249.57,"net_cost":1128.57,"gross_revenue":27797.65,"orders":202,"roi":22.25,"cost_per_order":6.19,"dow":"Thursday"},{"date_str":"2026-06-05","cost":1320.16,"net_cost":1320.16,"gross_revenue":27965.91,"orders":185,"roi":21.18,"cost_per_order":7.14,"dow":"Friday"},{"date_str":"2026-06-06","cost":4332.95,"net_cost":2968.84,"gross_revenue":58104.94,"orders":347,"roi":13.41,"cost_per_order":12.49,"dow":"Saturday"},{"date_str":"2026-06-07","cost":1359.93,"net_cost":710.04,"gross_revenue":23508.77,"orders":153,"roi":17.29,"cost_per_order":8.89,"dow":"Sunday"},{"date_str":"2026-06-08","cost":999.64,"net_cost":998.16,"gross_revenue":17028.55,"orders":106,"roi":17.03,"cost_per_order":9.43,"dow":"Monday"},{"date_str":"2026-06-09","cost":819.48,"net_cost":819.48,"gross_revenue":11869.92,"orders":77,"roi":14.48,"cost_per_order":10.64,"dow":"Tuesday"},{"date_str":"2026-06-10","cost":1147.21,"net_cost":1147.21,"gross_revenue":23438.92,"orders":134,"roi":20.43,"cost_per_order":8.56,"dow":"Wednesday"},{"date_str":"2026-06-11","cost":958.12,"net_cost":958.12,"gross_revenue":13489.4,"orders":86,"roi":14.08,"cost_per_order":11.14,"dow":"Thursday"},{"date_str":"2026-06-12","cost":458.52,"net_cost":458.52,"gross_revenue":10618.06,"orders":59,"roi":23.16,"cost_per_order":7.77,"dow":"Friday"},{"date_str":"2026-06-13","cost":625.06,"net_cost":625.06,"gross_revenue":6837.58,"orders":37,"roi":10.94,"cost_per_order":16.89,"dow":"Saturday"},{"date_str":"2026-06-14","cost":849.38,"net_cost":849.38,"gross_revenue":14722.67,"orders":81,"roi":17.33,"cost_per_order":10.49,"dow":"Sunday"},{"date_str":"2026-06-15","cost":1139.98,"net_cost":1139.98,"gross_revenue":18470.84,"orders":104,"roi":16.2,"cost_per_order":10.96,"dow":"Monday"},{"date_str":"2026-06-16","cost":827.53,"net_cost":827.53,"gross_revenue":13837.29,"orders":90,"roi":16.72,"cost_per_order":9.19,"dow":"Tuesday"},{"date_str":"2026-06-17","cost":1049.94,"net_cost":1049.94,"gross_revenue":18677.14,"orders":109,"roi":17.79,"cost_per_order":9.63,"dow":"Wednesday"},{"date_str":"2026-06-18","cost":869.88,"net_cost":583.9,"gross_revenue":17119.12,"orders":106,"roi":19.68,"cost_per_order":8.21,"dow":"Thursday"},{"date_str":"2026-06-19","cost":1115.17,"net_cost":557.15,"gross_revenue":23771.2,"orders":143,"roi":21.32,"cost_per_order":7.8,"dow":"Friday"},{"date_str":"2026-06-20","cost":613.91,"net_cost":613.91,"gross_revenue":10244.29,"orders":54,"roi":16.69,"cost_per_order":11.37,"dow":"Saturday"},{"date_str":"2026-06-21","cost":612.87,"net_cost":612.87,"gross_revenue":12128.42,"orders":64,"roi":19.79,"cost_per_order":9.58,"dow":"Sunday"},{"date_str":"2026-06-22","cost":578.6,"net_cost":578.6,"gross_revenue":11820.3,"orders":61,"roi":20.43,"cost_per_order":9.49,"dow":"Monday"},{"date_str":"2026-06-23","cost":521.63,"net_cost":521.63,"gross_revenue":12463.26,"orders":67,"roi":23.89,"cost_per_order":7.79,"dow":"Tuesday"},{"date_str":"2026-06-24","cost":570.56,"net_cost":570.56,"gross_revenue":10371.09,"orders":57,"roi":18.18,"cost_per_order":10.01,"dow":"Wednesday"},{"date_str":"2026-06-25","cost":645.4,"net_cost":645.4,"gross_revenue":14768.51,"orders":81,"roi":22.88,"cost_per_order":7.97,"dow":"Thursday"},{"date_str":"2026-06-26","cost":684.33,"net_cost":684.33,"gross_revenue":14620.49,"orders":68,"roi":21.36,"cost_per_order":10.06,"dow":"Friday"},{"date_str":"2026-06-27","cost":642.9,"net_cost":642.9,"gross_revenue":11849.03,"orders":52,"roi":18.43,"cost_per_order":12.36,"dow":"Saturday"},{"date_str":"2026-06-28","cost":649.56,"net_cost":649.56,"gross_revenue":12174.87,"orders":63,"roi":18.74,"cost_per_order":10.31,"dow":"Sunday"},{"date_str":"2026-06-29","cost":687.41,"net_cost":687.41,"gross_revenue":15280.34,"orders":72,"roi":22.23,"cost_per_order":9.55,"dow":"Monday"},{"date_str":"2026-06-30","cost":684.2,"net_cost":684.2,"gross_revenue":16973.62,"orders":73,"roi":24.81,"cost_per_order":9.37,"dow":"Tuesday"},{"date_str":"2026-07-01","cost":307.8,"net_cost":307.8,"gross_revenue":7832.54,"orders":36,"roi":25.45,"cost_per_order":8.55,"dow":"Wednesday"},{"date_str":"2026-07-02","cost":383.9,"net_cost":383.9,"gross_revenue":12318.63,"orders":55,"roi":32.09,"cost_per_order":6.98,"dow":"Thursday"}];
+
+const campaigns = [
+ {name:"LIVE GMV Max", full:"LIVE GMV Max_Levi's Malaysia", cost:10070.77, net_cost:8593.22, gross_revenue:193621.17, roi:19.23, orders:947, cpo:10.63},
+ {name:"All Mens (1)", full:"All mens (1)_Levis", cost:7878.17, net_cost:7064.35, gross_revenue:129278.64, roi:16.41, orders:865, cpo:9.11},
+ {name:"All Womens", full:"ALL Womens_Levis", cost:3229.01, net_cost:2994.27, gross_revenue:58496.88, roi:18.12, orders:350, cpo:9.23},
+ {name:"EOSS Jun", full:"EOSS_JUN", cost:1592.18, net_cost:1483.87, gross_revenue:30731.15, roi:19.30, orders:247, cpo:6.45},
+ {name:"Men Pants", full:"Men pants_levis", cost:1355.45, net_cost:1278.53, gross_revenue:28153.50, roi:20.77, orders:125, cpo:10.84},
+ {name:"Women Shaping Jeans", full:"Women shaping jeans_Levis", cost:1132.79, net_cost:1090.59, gross_revenue:25324.92, roi:22.36, orders:88, cpo:12.87},
+ {name:"318 Wide-Leg 0009", full:"Levi's Women's 318 Shaping Wide-Leg Jeans 001PZ-0009", cost:1213.11, net_cost:1050.94, gross_revenue:19071.98, roi:15.72, orders:81, cpo:14.98},
+ {name:"Cap", full:"Cap_Levis", cost:630.46, net_cost:595.01, gross_revenue:11514.80, roi:18.26, orders:208, cpo:3.03},
+ {name:"511 Slim Fit 2402", full:"Levi's 511 Slim Fit Jeans Men 04511-2402", cost:489.77, net_cost:460.87, gross_revenue:9097.14, roi:18.57, orders:35, cpo:13.99},
+ {name:"Jun 6.6 Sale", full:"jun 6.6", cost:149.24, net_cost:148.82, gross_revenue:1775.56, roi:11.90, orders:7, cpo:21.32},
+];
+
+const products = [
+ {title:"318 Shaping Wide-Leg 0009", cost:1253.94, gross_revenue:30308.02, orders:129, roi:24.17},
+ {title:"318 Shaping Wide-Leg 0014", cost:295.63, gross_revenue:14488.32, orders:41, roi:49.01},
+ {title:"505 Regular Fit 0260", cost:1028.86, gross_revenue:14083.21, orders:66, roi:13.69},
+ {title:"511 Slim Fit 2402", cost:500.56, gross_revenue:10407.24, orders:40, roi:20.79},
+ {title:"512 Slim Taper 1508", cost:1012.76, gross_revenue:10266.17, orders:63, roi:10.14},
+ {title:"Women's Trucker Jacket", cost:209.68, gross_revenue:9878.69, orders:47, roi:47.11},
+ {title:"505 Regular Rinse Timberwolf", cost:524.38, gross_revenue:9564.32, orders:46, roi:18.24},
+ {title:"318 Shaping Wide-Leg 0001", cost:186.34, gross_revenue:9434.83, orders:30, roi:50.63},
+ {title:"315 Shaping Bootcut", cost:221.92, gross_revenue:8703.24, orders:36, roi:39.22},
+ {title:"505 Regular Jeans 1396", cost:551.49, gross_revenue:7355.30, orders:35, roi:13.34},
+];
+
+const dow = [
+ {day:"Mon", cost:851.41, revenue:15650.01, orders:85.75, roi:18.97},
+ {day:"Tue", cost:713.21, revenue:13786.02, orders:76.75, roi:19.98},
+ {day:"Wed", cost:822.17, revenue:15456.42, orders:93.40, roi:19.65},
+ {day:"Thu", cost:821.37, revenue:17098.66, orders:106.00, roi:22.20},
+ {day:"Fri", cost:894.54, revenue:19243.92, orders:113.75, roi:21.76},
+ {day:"Sat", cost:1553.70, revenue:21758.96, orders:122.50, roi:14.87},
+ {day:"Sun", cost:867.94, revenue:15633.68, orders:90.25, roi:18.29},
+];
+
+const COLORS = {denim:'#33507E', denimLight:'#7C93BE', tab:'#B8431F', sage:'#5E8368', amber:'#C9922E', grid:'#E2E4EC', muted:'#6B7086'};
+Chart.defaults.font.family = "'Inter',sans-serif";
+Chart.defaults.color = COLORS.muted;
+Chart.defaults.font.size = 11;
+
+const shortDates = daily.map(d=>{const [y,m,day]=d.date_str.split('-'); return new Date(y,m-1,day).toLocaleDateString('en-US',{month:'short',day:'numeric'});});
+
+// 1. Spend vs Revenue
+new Chart(document.getElementById('chSpendRev'), {
+  type:'line',
+  data:{labels:shortDates, datasets:[
+    {label:'Spend (RM)', data:daily.map(d=>d.cost), borderColor:COLORS.tab, backgroundColor:COLORS.tab, yAxisID:'y', tension:.3, pointRadius:0, borderWidth:2},
+    {label:'Gross Revenue (RM)', data:daily.map(d=>d.gross_revenue), borderColor:COLORS.denim, backgroundColor:'rgba(51,80,126,.12)', yAxisID:'y1', tension:.3, pointRadius:0, borderWidth:2, fill:true},
+  ]},
+  options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index', intersect:false},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:10}}},
+    scales:{
+      x:{grid:{display:false}, ticks:{maxTicksLimit:8}},
+      y:{position:'left', grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+(v/1000).toFixed(1)+'k'}, title:{display:true,text:'Spend'}},
+      y1:{position:'right', grid:{display:false}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}, title:{display:true,text:'Revenue'}},
+    }}
+});
+
+// 2. ROI trend
+const avgROI = (daily.reduce((s,d)=>s+d.roi,0)/daily.length);
+new Chart(document.getElementById('chROI'), {
+  type:'line',
+  data:{labels:shortDates, datasets:[
+    {label:'Daily ROI', data:daily.map(d=>d.roi), borderColor:COLORS.denim, backgroundColor:'rgba(51,80,126,.1)', tension:.3, pointRadius:0, borderWidth:2, fill:true},
+    {label:'30-day avg', data:daily.map(()=>avgROI), borderColor:COLORS.amber, borderDash:[5,4], pointRadius:0, borderWidth:1.5},
+  ]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom', labels:{boxWidth:10, padding:10}}},
+    scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:8}}, y:{grid:{color:COLORS.grid}, ticks:{callback:v=>v+'x'}}}}
+});
+
+// 3. Orders volume
+new Chart(document.getElementById('chOrders'), {
+  type:'bar',
+  data:{labels:shortDates, datasets:[{label:'Orders', data:daily.map(d=>d.orders), backgroundColor:COLORS.denimLight, borderRadius:3, maxBarThickness:14}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:8}}, y:{grid:{color:COLORS.grid}}}}
+});
+
+// 4. Cost per order
+new Chart(document.getElementById('chCPO'), {
+  type:'line',
+  data:{labels:shortDates, datasets:[{label:'Cost / Order (RM)', data:daily.map(d=>d.cost_per_order), borderColor:COLORS.tab, backgroundColor:'rgba(184,67,31,.1)', tension:.3, pointRadius:0, borderWidth:2, fill:true}]},
+  options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+    scales:{x:{grid:{display:false}, ticks:{maxTicksLimit:8}}, y:{grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+v}}}}
+});
+
+// 5. Cumulative
+let cumCost=0, cumRev=0;
+const cumC=[], cumR=[];
+daily.forEach(d=>{cumCost+=d.cost; cumRev+=d.gross_revenue; cumC.push(cumCost); cumR.push(cumRev);});
+new Chart(document.getElementById('chCumulative'), {
+  type:'line',
+  data:{labels:shortDates, datasets:[
+    {label:'Cumulative Spend (RM)', data:cumC, borderColor:COLORS.tab, backgroundColor:'rgba(184,67,31,.12)', yAxisID:'y', fill:true, tension:.25, pointRadius:0, borderWidth:2},
+    {label:'Cumulative Revenue (RM)', data:cumR, borderColor:COLORS.denim, backgroundColor:'rgba(51,80,126,.12)', yAxisID:'y1', fill:true, tension:.25, pointRadius:0, borderWidth:2},
+  ]},
+  options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:10,padding:10}}},
+    scales:{
+      x:{grid:{display:false}, ticks:{maxTicksLimit:8}},
+      y:{position:'left', grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}},
+      y1:{position:'right', grid:{display:false}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}},
+    }}
+});
+
+// 6. Donut spend share
+new Chart(document.getElementById('chDonut'), {
+  type:'doughnut',
+  data:{labels:campaigns.map(c=>c.name), datasets:[{data:campaigns.map(c=>c.cost),
+    backgroundColor:['#33507E','#4A6B9E','#7C93BE','#B8431F','#D9805C','#C9922E','#5E8368','#8AAE92','#6B7086','#A7ABBB']}]},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'right', labels:{boxWidth:10, font:{size:10.5}, padding:8}},
+      tooltip:{callbacks:{label:ctx=>` ${ctx.label}: RM${ctx.parsed.toLocaleString()} (${(ctx.parsed/27740.95*100).toFixed(1)}%)`}}}}
+});
+
+// 7. Revenue by campaign
+const sortedByRev = [...campaigns].sort((a,b)=>b.gross_revenue-a.gross_revenue);
+new Chart(document.getElementById('chCampaignRev'), {
+  type:'bar',
+  data:{labels:sortedByRev.map(c=>c.name), datasets:[{label:'Gross Revenue (RM)', data:sortedByRev.map(c=>c.gross_revenue), backgroundColor:COLORS.denim, borderRadius:4, maxBarThickness:22}]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>{const c=sortedByRev[ctx.dataIndex]; return [` Revenue: RM${c.gross_revenue.toLocaleString()}`,` Spend: RM${c.cost.toLocaleString()}`,` ROI: ${c.roi}x  ·  Orders: ${c.orders}`];}}}},
+    scales:{x:{grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}}, y:{grid:{display:false}, ticks:{font:{size:11}}}}}
+});
+
+// 8. Efficiency scatter (bubble)
+new Chart(document.getElementById('chScatter'), {
+  type:'bubble',
+  data:{datasets:campaigns.map((c,i)=>({
+    label:c.name,
+    data:[{x:c.cost, y:c.roi, r:Math.max(6,Math.sqrt(c.orders)*1.6)}],
+    backgroundColor:['#33507E','#4A6B9E','#7C93BE','#B8431F','#D9805C','#C9922E','#5E8368','#8AAE92','#6B7086','#A7ABBB'][i]+'CC',
+  }))},
+  options:{responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'right', labels:{boxWidth:8, font:{size:10}, padding:6}},
+      tooltip:{callbacks:{label:ctx=>{const c=campaigns[ctx.datasetIndex]; return `${c.name}: RM${c.cost.toLocaleString()} spend, ${c.roi}x ROI, ${c.orders} orders`;}}}},
+    scales:{x:{title:{display:true,text:'Spend (RM)'}, grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+v}},
+      y:{title:{display:true,text:'ROI (x)'}, grid:{color:COLORS.grid}, ticks:{callback:v=>v+'x'}}}}
+});
+
+// 9. Cost vs Net Cost
+new Chart(document.getElementById('chNetCost'), {
+  type:'bar',
+  data:{labels:sortedByRev.map(c=>c.name), datasets:[
+    {label:'Cost', data:sortedByRev.map(c=>c.cost), backgroundColor:COLORS.tab, maxBarThickness:14, borderRadius:3},
+    {label:'Net Cost', data:sortedByRev.map(c=>c.net_cost), backgroundColor:COLORS.sage, maxBarThickness:14, borderRadius:3},
+  ]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom', labels:{boxWidth:10,padding:10}}},
+    scales:{x:{grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}}, y:{grid:{display:false}, ticks:{font:{size:11}}}}}
+});
+
+// 10. Orders vs CPO combo
+new Chart(document.getElementById('chOrdersCPO'), {
+  data:{labels:sortedByRev.map(c=>c.name), datasets:[
+    {type:'bar', label:'Orders', data:sortedByRev.map(c=>c.orders), backgroundColor:COLORS.denimLight, yAxisID:'y', borderRadius:3, maxBarThickness:22},
+    {type:'line', label:'Cost/Order (RM)', data:sortedByRev.map(c=>c.cpo), borderColor:COLORS.amber, backgroundColor:COLORS.amber, yAxisID:'y1', tension:.3, borderWidth:2},
+  ]},
+  options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'bottom', labels:{boxWidth:10,padding:10}}},
+    scales:{x:{grid:{display:false}, ticks:{font:{size:9.5}, maxRotation:40, minRotation:20}},
+      y:{position:'left', grid:{color:COLORS.grid}, title:{display:true,text:'Orders'}},
+      y1:{position:'right', grid:{display:false}, ticks:{callback:v=>'RM'+v}, title:{display:true,text:'Cost/Order'}}}}
+});
+
+// 11. Products
+const sortedProducts = [...products].sort((a,b)=>b.gross_revenue-a.gross_revenue);
+new Chart(document.getElementById('chProducts'), {
+  type:'bar',
+  data:{labels:sortedProducts.map(p=>p.title), datasets:[{label:'Gross Revenue (RM)', data:sortedProducts.map(p=>p.gross_revenue), backgroundColor:COLORS.sage, borderRadius:4, maxBarThickness:20}]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>{const p=sortedProducts[ctx.dataIndex]; return [` Revenue: RM${p.gross_revenue.toLocaleString()}`,` Spend: RM${p.cost.toLocaleString()}  ·  ROI: ${p.roi}x`,` Orders: ${p.orders}`];}}}},
+    scales:{x:{grid:{color:COLORS.grid}, ticks:{callback:v=>'RM'+(v/1000).toFixed(0)+'k'}}, y:{grid:{display:false}, ticks:{font:{size:10.5}}}}}
+});
+
+// 12. Day-of-week heatmap (custom table)
+function colorFor(val, min, max, hue){
+  const t = Math.max(0, Math.min(1, (val-min)/(max-min)));
+  const light = 88 - t*45;
+  return `hsl(${hue}, 45%, ${light}%)`;
+}
+const metrics = [
+  {key:'cost', label:'Avg Spend (RM)', hue:14, fmt:v=>'RM'+v.toFixed(0)},
+  {key:'orders', label:'Avg Orders', hue:225, fmt:v=>v.toFixed(0)},
+  {key:'roi', label:'Avg ROI', hue:140, fmt:v=>v.toFixed(1)+'x'},
+];
+let heatHtml = '<table class="heat"><tr><th></th>' + dow.map(d=>`<th>${d.day}</th>`).join('') + '</tr>';
+metrics.forEach(m=>{
+  const vals = dow.map(d=>d[m.key]);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  heatHtml += `<tr><td class="metric-label">${m.label}</td>` + dow.map(d=>{
+    const bg = colorFor(d[m.key], min, max, m.hue);
+    return `<td style="background:${bg}">${m.fmt(d[m.key])}</td>`;
+  }).join('') + '</tr>';
+});
+heatHtml += '</table>';
+document.getElementById('heatmapHost').innerHTML = heatHtml;
+</script>
+</body>
+</html>
